@@ -1,14 +1,15 @@
 version: "3.8"
 services:
   zookeeper:
-    image: bitnami/zookeeper:3
+    image: bitnami/zookeeper:3.8.1
     environment:
       ALLOW_ANONYMOUS_LOGIN: "yes"
     ports:
       - "2181:2181"
+    restart: unless-stopped
 
   kafka:
-    image: bitnami/kafka:3
+    image: bitnami/kafka:3.5.1
     depends_on:
       - zookeeper
     environment:
@@ -17,10 +18,14 @@ services:
       ALLOW_PLAINTEXT_LISTENER: "yes"
       KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
     ports:
       - "9092:9092"
+    restart: unless-stopped
 
   redis:
     image: redis:7
     ports:
       - "6379:6379"
+    restart: unless-stopped
