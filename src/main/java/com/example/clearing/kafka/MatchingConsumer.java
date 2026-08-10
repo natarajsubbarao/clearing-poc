@@ -18,7 +18,7 @@ public class MatchingConsumer {
         this.objectMapper = objectMapper;
     }
 
-    @KafkaListener(topics = "${topic.trades}", groupId = "matching-group")
+    @KafkaListener(topics = "${topic.trades:trades-normalized}", groupId = "matching-group")
     public void consumeTrade(String message) {
         try {
             TradeMessage t = objectMapper.readValue(message, TradeMessage.class);
@@ -28,7 +28,7 @@ public class MatchingConsumer {
         }
     }
 
-    @KafkaListener(topics = "${topic.execs}", groupId = "matching-group")
+    @KafkaListener(topics = "${topic.execs:executions-normalized}", groupId = "matching-group")
     public void consumeExec(String message) {
         try {
             ExecutionMessage e = objectMapper.readValue(message, ExecutionMessage.class);
