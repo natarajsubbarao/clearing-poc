@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="700" viewBox="0 0 1100 700">
+  <style>
+    .box { fill:#f7fbff; stroke:#2b6cb0; stroke-width:2px; rx:8; }
+    .service { fill:#fff7ed; stroke:#dd6b20; stroke-width:2px; rx:8; }
+    .db { fill:#f0fff4; stroke:#048857; stroke-width:2px; rx:8; }
+    .text { font-family: Arial, Helvetica, sans-serif; font-size:13px; fill:#1a202c }
+    .title { font-weight:700; font-size:16px }
+    .small { font-size:11px; fill:#4a5568 }
+    .arrow { stroke:#2d3748; stroke-width:2; fill:none; marker-end: url(#arrowhead); }
+  </style>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2d3748" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="20" y="30" class="text title">Clearing POC — System Architecture</text>
+  <text x="20" y="50" class="text small">CSV producer -> Kafka -> Matching consumer -> Redis list store -> Matching logic</text>
+
+  <!-- Left: CSV files and CsvPublisher (App) -->
+  <rect x="30" y="90" width="240" height="120" class="box" />
+  <text x="50" y="115" class="text" style="font-weight:600">Csv Files</text>
+  <text x="50" y="135" class="text small">data/trades.csv</text>
+  <text x="50" y="150" class="text small">data/executions.csv</text>
+
+  <rect x="30" y="230" width="240" height="140" class="service" />
+  <text x="50" y="255" class="text" style="font-weight:600">App (Spring Boot)</text>
+  <text x="50" y="275" class="text small">- CsvPublisher (CommandLineRunner)</text>
+  <text x="50" y="293" class="text small">  reads CSV, serializes JSON</text>
+  <text x="50" y="310" class="text small">- MatchingConsumer (@KafkaListener)</text>
+
+  <!-- Kafka cluster in center -->
+  <rect x="330" y="70" width="360" height="130" class="box" />
+  <text x="350" y="95" class="text" style="font-weight:600">Kafka Broker</text>
+  <text x="350" y="115" class="text small">topics: trades-normalized, executions-normalized</text>
+  <text x="350" y="135" class="text small">bootstrap: ${KAFKA_BOOTSTRAP_SERVERS}</text>
+
+  <!-- Zookeeper/Redpanda note -->
+  <rect x="720" y="70" width="140" height="60" class="box" />
+  <text x="735" y="95" class="text small">Zookeeper (if used)</text>
+
+  <!-- Redis -->
+  <rect x="330" y="230" width="240" height="110" class="db" />
+  <text x="350" y="255" class="text" style="font-weight:600">Redis</text>
+  <text x="350" y="275" class="text small">List keys per match:</text>
+  <text x="350" y="293" class="text small">match:&lt;symbol&gt;:&lt;side&gt;:&lt;price&gt;:trades</text>
+  <text x="350" y="310" class="text small">match:&lt;symbol&gt;:&lt;side&gt;:&lt;price&gt;:execs</text>
+
+  <!-- MatchingService box near Redis -->
+  <rect x="610" y="230" width="280" height="110" class="service" />
+  <text x="630" y="255" class="text" style="font-weight:600">MatchingService</text>
+  <text x="630" y="275" class="text small">- Handles trade/exec messages</text>
+  <text x="630" y="293" class="text small">- Reads/writes Redis lists</text>
+  <text x="630" y="310" class="text small">- Prints MATCH -> ...</text>
+
+  <!-- Arrows: CsvFiles -> App -> Kafka -->
+  <path d="M270 150 L330 150" class="arrow" />
+  <text x="290" y="142" class="text small">reads</text>
+  <path d="M270 300 L330 300" class="arrow" />
+  <text x="290" y="292" class="text small">publishes JSON</text>
+
+  <!-- CsvPublisher to Kafka (via App) -->
+  <path d="M270 280 L330 140" class="arrow" />
+  <text x="300" y="200" class="text small">KafkaTemplate.send()</text>
+
+  <!-- Kafka -> MatchingConsumer (App) -->
+  <path d="M690 135 L610 135 L610 230" class="arrow" />
+  <text x="610" y="120" class="text small">@KafkaListener consumes</text>
+
+  <!-- MatchingConsumer -> MatchingService (internal call) -->
+  <path d="M550 265 L610 265" class="arrow" />
+  <text x="560" y="255" class="text small">handleTrade/handleExecution</text>
+
+  <!-- MatchingService <-> Redis -->
+  <path d="M570 285 L610 285" class="arrow" />
+  <path d="M570 295 L610 295" class="arrow" />
+  <text x="470" y="240" class="text small">leftPop / rightPush</text>
+
+  <!-- Docker compose / infra legend -->
+  <rect x="30" y="400" width="860" height="230" fill="#ffffff" stroke="#718096" rx="6" />
+  <text x="40" y="425" class="text" style="font-weight:600">Infra (docker-compose)</text>
+  <text x="40" y="445" class="text small">- kafka (bitnami/redpanda) - mapped port 9092</text>
+  <text x="40" y="462" class="text small">- zookeeper (if using Kafka)</text>
+  <text x="40" y="479" class="text small">- redis - mapped port 6379</text>
+  <text x="40" y="496" class="text small">- Topics: trades-normalized, executions-normalized</text>
+
+  <!-- Notes -->
+  <text x="40" y="540" class="text small">Runtime notes: CsvPublisher is a CommandLineRunner — it runs after Spring Boot starts and immediately publishes CSV rows to Kafka.</text>
+  <text x="40" y="560" class="text small">MatchingConsumer listeners are started by Spring and will consume messages as they arrive.</text>
+  <text x="40" y="580" class="text small">KafkaAdmin may attempt to auto-create topics at startup; ensure broker is reachable or set spring.kafka.admin.fail-fast=false.</text>
+
+  <!-- Footer -->
+  <text x="40" y="655" class="text small">Generated diagram — Clearing POC (components and data flow)</text>
+
+</svg>
